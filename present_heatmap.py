@@ -9,6 +9,6 @@ df = pd.read_csv('output_field_vel.csv', header=None)
 data = np.flipud(df.to_numpy() )
 
  # Create a heatmap
-plt.imshow(data, cmap='viridis', interpolation='nearest') 
+plt.imshow(data, cmap='coolwarm', interpolation='nearest') 
 plt.colorbar()  
 plt.show()
