@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 df = pd.read_csv('output_field_vel.csv', header=None) 
 
 # Convert data from csv to NumPy array
-data = df.to_numpy() 
+data = np.flipud(df.to_numpy() )
 
  # Create a heatmap
 plt.imshow(data, cmap='viridis', interpolation='nearest') 
