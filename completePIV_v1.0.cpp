@@ -199,95 +199,95 @@ public:
     }
 
     // Function to perform cross-correlation between fields with a progress bar
-void cross_correlate_fields() {
-    int counter = 1;
-    const int totalIterations = (vec_res_x * vec_res_y) - 1;
-    v3Int temp_vec_field(vec_res_y, v2Int(vec_res_x, vInt(2, 0)));
-    int a = 0;
+    void cross_correlate_fields() {
+        int counter = 1;
+        const int totalIterations = (vec_res_x * vec_res_y) - 1;
+        v3Int temp_vec_field(vec_res_y, v2Int(vec_res_x, vInt(2, 0)));
+        int a = 0;
 
-    // Loop through each row of the vector field
-    #pragma omp parallel for private(a)
-    for (int a = 0; a < vec_res_y; a++) {
-        v2Int vec_row;
+        // Loop through each row of the vector field
+        #pragma omp parallel for private(a)
+        for (int a = 0; a < vec_res_y; a++) {
+            v2Int vec_row;
 
-        // Loop through each element in the row
-        for (int b = 0; b < vec_res_x; b++) {
+            // Loop through each element in the row
+            for (int b = 0; b < vec_res_x; b++) {
 
-            #pragma omp critical
-            { 
-                if(!extra_output) {
-                    // Print progress bar
-                    printProgressBar(counter, totalIterations);
-                    counter++;
+                #pragma omp critical
+                { 
+                    if(!extra_output) {
+                        // Print progress bar
+                        printProgressBar(counter, totalIterations);
+                        counter++;
+                    }
                 }
-            }
 
-            if (extra_output) {
-                std::cout << "Cross correlating for vector at (" << b << "," << a << ")" << std::endl;
-            }
-
-            int x, y;
-            x = b * (field.at(0).size() / vec_res_x);
-            y = a * (field.size() / vec_res_y);
-
-            v2Int window = create_window(field, x, y);
-            std::vector<int*> R;
-
-            // Loop through possible shifts for cross-correlation
-            for (int s_x = -max_shift; s_x < max_shift; s_x++) {
-                for (int s_y = -max_shift; s_y < max_shift; s_y++) {
-                    v2Int window_prime = create_window(field_prime, x + s_x, y + s_y);
-                    int* R_list = new int[3];
-                    R_list[0] = correlate(window, window_prime);
-                    R_list[1] = x + s_x;
-                    R_list[2] = y + s_y;
-
-                    R.push_back(R_list);
+                if (extra_output) {
+                    std::cout << "Cross correlating for vector at (" << b << "," << a << ")" << std::endl;
                 }
-            }
 
-            int r_max_index = 0;
+                int x, y;
+                x = b * (field.at(0).size() / vec_res_x);
+                y = a * (field.size() / vec_res_y);
+
+                v2Int window = create_window(field, x, y);
+                std::vector<int*> R;
+
+                // Loop through possible shifts for cross-correlation
+                for (int s_x = -max_shift; s_x < max_shift; s_x++) {
+                    for (int s_y = -max_shift; s_y < max_shift; s_y++) {
+                        v2Int window_prime = create_window(field_prime, x + s_x, y + s_y);
+                        int* R_list = new int[3];
+                        R_list[0] = correlate(window, window_prime);
+                        R_list[1] = x + s_x;
+                        R_list[2] = y + s_y;
+
+                        R.push_back(R_list);
+                    }
+                }
+
+                int r_max_index = 0;
 
 
-                // Find the maximum correlation value
-                for (int e = 0; e < R.size(); e++) {
+                    // Find the maximum correlation value
+                    for (int e = 0; e < R.size(); e++) {
+                        if (extra_output) {
+                            std::cout << "comparing " << R.at(e)[0] << " and " << R.at(r_max_index)[0] << std::endl;
+                        }
+
+                        if (R.at(e)[0] > R.at(r_max_index)[0]) {
+                            r_max_index = e;
+                        }
+                    }
+
                     if (extra_output) {
-                        std::cout << "comparing " << R.at(e)[0] << " and " << R.at(r_max_index)[0] << std::endl;
+                        std::cout << "Maximum R of " << R.at(r_max_index)[0] << " at coordinates " << R.at(r_max_index)[1] << "," << R.at(r_max_index)[2] << std::endl;
                     }
 
-                    if (R.at(e)[0] > R.at(r_max_index)[0]) {
-                        r_max_index = e;
+                    int vec_x = R.at(r_max_index)[1] - x;
+                    int vec_y = R.at(r_max_index)[2] - y;
+
+                    vInt r_max_vec;
+                    r_max_vec.push_back(vec_x);
+                    r_max_vec.push_back(vec_y);
+
+                    if (extra_output) {
+                        std::cout << "Adding vector " << vec_x << "," << vec_y << std::endl;
+                    }
+
+                    vec_row.push_back(r_max_vec);
+
+                    // Clean up memory allocated for R_list
+                    for (int i = 0; i < R.size(); i++) {
+                        delete[] R[i];
                     }
                 }
-
-                if (extra_output) {
-                    std::cout << "Maximum R of " << R.at(r_max_index)[0] << " at coordinates " << R.at(r_max_index)[1] << "," << R.at(r_max_index)[2] << std::endl;
-                }
-
-                int vec_x = R.at(r_max_index)[1] - x;
-                int vec_y = R.at(r_max_index)[2] - y;
-
-                vInt r_max_vec;
-                r_max_vec.push_back(vec_x);
-                r_max_vec.push_back(vec_y);
-
-                if (extra_output) {
-                    std::cout << "Adding vector " << vec_x << "," << vec_y << std::endl;
-                }
-
-                vec_row.push_back(r_max_vec);
-
-                // Clean up memory allocated for R_list
-                for (int i = 0; i < R.size(); i++) {
-                    delete[] R[i];
+                
+                for (int e = 0; e<vec_row.size();e++) {
+                    temp_vec_field[a][e][0] = vec_row[e][0];
+                    temp_vec_field[a][e][1] = vec_row[e][1];
                 }
             }
-            
-            for (int e = 0; e<vec_row.size();e++) {
-                temp_vec_field[a][e][0] = vec_row[e][0];
-                temp_vec_field[a][e][1] = vec_row[e][1];
-            }
-        }
 
         vec_field = temp_vec_field;
 
@@ -428,10 +428,10 @@ void write_field_csv(v2Dub field, std::string extra) {
 
 int main() {
     // Parameters
-    int max_shift = 15;
+    int max_shift = 20;
     int window_size = 50;
-    int vec_res_x = 130;
-    int vec_res_y = 100;
+    int vec_res_x = 130/10;
+    int vec_res_y = 100/10;
     double cutoff = 5.0;
 
     int start = 96;
