@@ -198,7 +198,7 @@ public:
         return sum;
     }
 
-    // Function to perform cross-correlation between fields with a progress bar
+    // Function to perform cross-correlation between fields
     void cross_correlate_fields() {
         int counter = 1;
         const int totalIterations = (vec_res_x * vec_res_y) - 1;
@@ -331,7 +331,7 @@ public:
     }
 };
 
-// Function to write vector field to CSV file with debug output
+// Function to write vector field to CSV file
 void write_vec_csv(v3Int vec_field, std::string extra) {
     std::string filename = "output_" + extra + ".csv";
     std::ofstream wfile;
@@ -428,11 +428,11 @@ void write_field_csv(v2Dub field, std::string extra) {
 
 int main() {
     // Parameters
-    int max_shift = 20;
+    int max_shift = 10;
     int window_size = 50;
     int vec_res_x = 130/10;
     int vec_res_y = 100/10;
-    double cutoff = 5.0;
+    double cutoff = 10.0;
 
     int start = 96;
     int end = 115;
